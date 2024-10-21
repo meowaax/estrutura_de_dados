@@ -227,82 +227,112 @@ if 'lista_voos' not in st.session_state:
 
 # Streamlit
 st.title('🛫FlyHigh')
-st.header('Sistema de Reserva de Voos')
 
-with st.form('busca_voo', clear_on_submit=True): #Buscar voos a partir da origem e destino
-    st.subheader('Buscar Voos')
-    origem = st.text_input('Origem')
-    destino = st.text_input('Destino')
-    radio = st.radio('Tipo de busca', ['Menor caminho', 'Menor custo'], index=None)
-    submit = st.form_submit_button('Buscar')
+menu = st.sidebar.selectbox('Menu', ['Tela Inicial', 'Buscar Voos', 'Reservar Voo', 'Listar Passageiros', 'Listar Voos'])
+
+if menu == 'Tela Inicial':
+    st.header('Bem-vindo ao FlyHigh!')
+    st.subheader('Sistema de gerenciamento de voos')
     
-    if submit:
-        if radio == 'Menor caminho':
-            rota = st.session_state.lista_voos.busca_em_largura(origem, destino)
-            st.write(f'Rota encontrada: {rota}')
-            st.subheader('Detalhes:')
-            if rota:
-                for voo in rota:
-                    voo_encontrado = st.session_state.lista_voos.buscar_voo_por_id(voo)
-                    if voo_encontrado:
-                        st.text_area(f"{voo_encontrado.id_voo}", str(voo_encontrado), height=200)
+    st.write('')
+    st.divider()
+    st.write('')
+    
+    st.subheader('👈 Selecione uma função no menu lateral para começar.')
+    
+    st.write('')
+    st.divider()
+    st.write('')
+    
+    st.subheader('Muitos destinos esperam por você!')
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.image('imagens/foto2.jpg', caption='🌊', use_column_width=True)
+
+    with col2:
+        st.image('imagens/foto1.jpg', caption='✈️', use_column_width=True)
+
+    with col3:
+        st.image('imagens/foto3.jpg', caption='❄️', use_column_width=True)
+
+elif menu == 'Buscar Voos':
+    with st.form('busca_voo', clear_on_submit=True): #Buscar voos a partir da origem e destino
+        st.subheader('Buscar Voos')
+        origem = st.text_input('Origem')
+        destino = st.text_input('Destino')
+        radio = st.radio('Tipo de busca', ['Menor caminho', 'Menor custo'], index=None)
+        submit = st.form_submit_button('Buscar')
+        
+        if submit:
+            if radio == 'Menor caminho':
+                rota = st.session_state.lista_voos.busca_em_largura(origem, destino)
+                st.write(f'Rota encontrada: {rota}')
+                st.subheader('Detalhes:')
+                if rota:
+                    for voo in rota:
+                        voo_encontrado = st.session_state.lista_voos.buscar_voo_por_id(voo)
+                        if voo_encontrado:
+                            st.text_area(f"{voo_encontrado.id_voo}", str(voo_encontrado), height=200)
+                            st.divider()
+                else:
+                    st.write('Não há voos disponíveis para esse trajeto. ❌')
+            elif radio == 'Menor custo':
+                caminho, voos, custo = st.session_state.lista_voos.dijkstra(origem, destino)
+                st.write(f'Caminho: {caminho}, Id voos: {voos}, Custo: {custo}')
+                st.subheader('Detalhes:')
+                if caminho: 
+                    for voo in voos:
+                        voo_encontrado = st.session_state.lista_voos.buscar_voo_por_id(voo)
+                        if voo_encontrado:
+                            st.text_area(f"{voo_encontrado.id_voo}", str(voo_encontrado), height=200)
+                            st.divider()
+                else:
+                    st.write('Não há voos disponíveis para esse trajeto. ❌')
+            else:
+                st.write('Por favor, selecione uma das opções. 😄')
+                
+elif menu == 'Reservar Voo':
+    with st.form('reservar_voo', clear_on_submit=True): #Reserva de voos
+        st.subheader('Reservar Voo')
+        id_voo = st.text_input('Id voo')
+        nome = st.text_input('Nome passageiro')
+        documento = st.text_input('Documento passageiro')
+        assento = st.text_input('Número assento')
+        submitted = st.form_submit_button('Reservar voo')
+        
+        if submitted:
+            voo = st.session_state.lista_voos.buscar_voo_por_id(int(id_voo))
+            if voo:
+                passageiro = Passageiro(nome, documento, assento)
+                voo.adicionar_passageiro(passageiro)
+                st.write('Reserva realizada com sucesso! ✔️😄')
+            else:
+                st.write('Algo deu errado 😭 Por favor, tente novamente.')
+                
+elif menu == 'Listar Passageiros':
+    with st.form('listar_passageiros', clear_on_submit=True): #Listar passageiros
+        st.subheader('Listar passageiros')
+        id_voo = st.text_input('Id voo')
+        submitted = st.form_submit_button('Listar passageiros')
+        
+        if submitted:
+            voo = st.session_state.lista_voos.buscar_voo_por_id(int(id_voo))
+            if voo:
+                st.subheader(f'Passageiros do Voo {voo.id_voo} ({voo.origem}) -> ({voo.destino})')
+                passageiros = voo.listar_passageiros()
+                if passageiros:
+                    for passageiro in passageiros:
+                        st.write(passageiro)
                         st.divider()
-            else:
-                st.write('Não há voos disponíveis para esse trajeto. ❌')
-        elif radio == 'Menor custo':
-            caminho, voos, custo = st.session_state.lista_voos.dijkstra(origem, destino)
-            st.write(f'Caminho: {caminho}, Id voos: {voos}, Custo: {custo}')
-            st.subheader('Detalhes:')
-            if caminho: 
-                for voo in voos:
-                    voo_encontrado = st.session_state.lista_voos.buscar_voo_por_id(voo)
-                    if voo_encontrado:
-                        st.text_area(f"{voo_encontrado.id_voo}", str(voo_encontrado), height=200)
-                        st.divider()
-            else:
-                st.write('Não há voos disponíveis para esse trajeto. ❌')
-        else:
-            st.write('Por favor, selecione uma das opções. 😄')
+                else:
+                    st.write('Nenhum passageiro encontrado. 😞')
 
-with st.form('reservar_voo', clear_on_submit=True): #Reserva de voos
-    st.subheader('Reservar Voo')
-    id_voo = st.text_input('Id voo')
-    nome = st.text_input('Nome passageiro')
-    documento = st.text_input('Documento passageiro')
-    assento = st.text_input('Número assento')
-    submitted = st.form_submit_button('Reservar voo')
-    
-    if submitted:
-        voo = st.session_state.lista_voos.buscar_voo_por_id(int(id_voo))
-        if voo:
-            passageiro = Passageiro(nome, documento, assento)
-            voo.adicionar_passageiro(passageiro)
-            st.write('Reserva realizada com sucesso! ✔️😄')
-        else:
-            st.write('Algo deu errado 😭 Por favor, tente novamente.')
+elif menu == 'Listar Voos':
+    st.subheader('Lista de Voos')
 
-with st.form('listar_passageiros', clear_on_submit=True): #Listar passageiros
-    st.subheader('Listar passageiros')
-    id_voo = st.text_input('Id voo')
-    submitted = st.form_submit_button('Listar passageiros')
-    
-    if submitted:
-        voo = st.session_state.lista_voos.buscar_voo_por_id(int(id_voo))
-        if voo:
-            st.subheader(f'Passageiros do Voo {voo.id_voo} ({voo.origem}) -> ({voo.destino})')
-            passageiros = voo.listar_passageiros()
-            if passageiros:
-                for passageiro in passageiros:
-                    st.write(passageiro)
-                    st.divider()
-            else:
-                st.write('Nenhum passageiro encontrado. 😞')
-
-
-st.subheader('Lista de Voos')
-
-if st.button('Listar voos', type="primary"): #Listar voos
-    voos = st.session_state.lista_voos.listar_voos()
-    for voo in voos:
-        st.write(voo)
-        st.divider()
+    if st.button('Listar voos', type="primary"): #Listar voos
+        voos = st.session_state.lista_voos.listar_voos()
+        for voo in voos:
+            st.write(voo)
+            st.divider()
